@@ -4,10 +4,18 @@ import torch
 import torch.nn as nn
 
 from model import TextCNN
+from utils import load_dataset
 import config
 
 
 def train(args, states=None):
+
+    trainloader = load_dataset(
+        data_path=config['training_data'],
+        labels_path=config['training_labels'],
+        batch_size=config['batch_size']
+    )
+
     model = TextCNN(
         num_classes=2,
         embedding_size=768,
@@ -22,7 +30,7 @@ def train(args, states=None):
 
         running_loss = 0
         running_corrects = 0
-        for i, data in enumerate(args.trainloader, 0):
+        for i, data in enumerate(trainloader, 0):
             # get the inputs; data is a list of [inputs, labels]
             inputs, labels = data
 
