@@ -52,13 +52,13 @@ def train_test_split(data, labels, train_size=0.8, random_seed=42):
 
     train_data, test_data = torch.utils.data.random_split(
         data,
-        (train_size, test_size),
+        (train_len, test_len),
         generator=generator
     )
 
     train_labels, test_labels = torch.utils.data.random_split(
         labels,
-        (train_size, test_size),
+        (train_len, test_len),
         generator=generator
     )
 
