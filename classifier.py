@@ -1,4 +1,5 @@
 import argparse
+import logging
 
 import torch
 import torch.nn as nn
@@ -10,27 +11,30 @@ import config
 
 def train(args, states=None):
 
-    trainloader = load_dataset(
-        data_path=config['training_data'],
-        labels_path=config['training_labels'],
-        batch_size=config['batch_size']
+    train_loader, val_loader, test_loader = load_dataset(
+        data_path=config.files.data,
+        labels_path=config.files.labels,
+        batch_size=config.train.batch_size
     )
 
     model = TextCNN(
-        num_classes=2,
-        embedding_size=768,
-        num_filters=128,
-        dropout_rate=0.5,
+        num_classes=config.train.num_classes,
+        embedding_size=config.train.embedding_size,
+        num_filters=config.train.num_filters,
+        dropout_rate=config.train.dropout,
     )
 
     loss_function = nn.CrossEntropyLoss()
-    optimizer = torch.optim.Adam(model.parameters(), lr=0.001)
+    optimizer = torch.optim.Adam(model.parameters(), lr=config.train.lr)
 
-    for epoch in range(5):  # loop over the dataset multiple times
+    best_acc = 0
 
-        running_loss = 0
-        running_corrects = 0
-        for i, data in enumerate(trainloader, 0):
+    # loop over the dataset multiple times
+    for epoch in range(1, config.train.num_epochs + 1):
+        logging.info(
+            f"==================== Epoch: {epoch} ====================")
+        running_losses = []
+        for i, data in enumerate(train_loader, 0):
             # get the inputs; data is a list of [inputs, labels]
             inputs, labels = data
 
@@ -45,16 +49,39 @@ def train(args, states=None):
             # update/optimize
             optimizer.step()
 
-            # print statistics
-            running_loss += loss.item()
-            running_corrects += torch.sum(classes == labels.data)
-            if i % 50 == 0 and i != 0:    # print every 50 mini-batches
-                print('[%d, %5d] loss: %.3f acc %.3f' %
-                      (epoch + 1, i + 1, running_loss / 50, running_corrects / 50))
-                running_loss = 0.0
-                running_corrects = 0.0
+            # Log summary
+            running_losses.append(losses.data[0])
+            if i % args.summary_interval == 0:
+                loss = sum(running_losses) / len(running_losses)
+                logging.info(f"step = {i}, loss = {loss}")
+                running_losses = []
 
-    print('Finished Training')
+            if i % args.test_interval == 0:
+                dev_acc = eval(val_loader, model, loss_function)
+                if dev_acc > best_acc:
+                    best_acc = dev_acc
+
+    print(f"Finished Training, best accuracy: {best_acc}")
+
+
+def eval(data_iter, model, loss_function):
+    model.eval()
+    corrects, avg_loss = 0, 0
+    for batch in data_iter:
+        inputs, labels = batch
+
+        probs, classes = model(inputs)
+        loss = loss_function(probs, labels)
+
+        avg_loss += loss.item()
+        corrects += torch.sum(classes == labels.data)
+
+    size = len(data_iter.dataset)
+    avg_loss /= size
+    accuracy = 100.0 * corrects / size
+    logging.info(
+        f"\nEvaluation - loss: {avg_loss:.6f}  acc: {accuracy:.4f}%({corrects}/{size}) \n")
+    return accuracy
 
 
 def parse_args(args):
@@ -102,5 +129,7 @@ def main(args):
 
 
 if __name__ == '__main__':
+    logging.basicConfig(
+        format="%(levelname)s\t%(asctime)s\t%(message)s", level=logging.INFO)
     import sys
     main(sys.argv[1:])
