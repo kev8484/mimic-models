@@ -7,7 +7,7 @@ from model import TextCNN
 import config
 
 
-def train(args):
+def train(args, states=None):
     model = TextCNN(
         num_classes=2,
         embedding_size=768,
