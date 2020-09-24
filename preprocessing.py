@@ -1,8 +1,11 @@
+import argparse
+from pathlib import Path
+
 import numpy as np
 import pandas as pd
 
 
-def identify_copd_admits(icd_path):
+def identify_copd_admits(mimic_path):
     """ Identify admissions that have a COPD diagnosis in any dx position.
     """
     # strict copd coding
@@ -23,19 +26,19 @@ def identify_copd_admits(icd_path):
         "4928",
     ]
 
-    print("Loading dx codes...")
-    df = pd.read_csv(icd_path)
+    df = pd.read_csv(mimic_path / Path("DIAGNOSES_ICD.csv"))
     copd_hadmids = df[df.ICD9_CODE.isin(
         strict_icd9 + reg_icd9)].HADM_ID.unique()
 
     return df, copd_hadmids
 
 
-def identify_30d_readmits(pt_path, admit_path, icd_df, copd_ids):
+def identify_30d_readmits(mimic_path, icd_df, copd_ids):
     """ Identify readmissions and flag 30 day readmits
     """
 
-    patients = pd.read_csv(pt_path, parse_dates=['DOB', 'DOD', 'DOD_HOSP'])
+    patients = pd.read_csv(mimic_path / Path("PATIENTS.csv"),
+                           parse_dates=['DOB', 'DOD', 'DOD_HOSP'])
 
     admission_cols = [
         'HADM_ID',
@@ -48,8 +51,7 @@ def identify_30d_readmits(pt_path, admit_path, icd_df, copd_ids):
         'HOSPITAL_EXPIRE_FLAG',
         'HAS_CHARTEVENTS_DATA',
     ]
-    print("Loading admission events...")
-    admits = pd.read_csv(admit_path, parse_dates=[
+    admits = pd.read_csv(mimic_path / Path("ADMISSIONS.csv"), parse_dates=[
                          'ADMITTIME', 'DISCHTIME', 'DEATHTIME', 'EDREGTIME', 'EDOUTTIME', ], usecols=admission_cols)
 
     # concat primary dx onto admissions
@@ -92,9 +94,9 @@ def identify_30d_readmits(pt_path, admit_path, icd_df, copd_ids):
     return admits
 
 
-def retrieve_discharge_notes(dc_path, admits_df):
+def retrieve_discharge_notes(mimic_path, admits_df):
     chunk_reader = pd.read_csv(
-        dc_path,
+        mimic_path / Path("NOTEEVENTS.csv"),
         chunksize=100000,
         usecols=['SUBJECT_ID', 'HADM_ID', 'CHARTDATE',
                  'CATEGORY', 'DESCRIPTION', 'TEXT', ]
@@ -125,3 +127,38 @@ def retrieve_discharge_notes(dc_path, admits_df):
                         'SUBJECT_ID', 'HADM_ID'], how='inner')
 
     return notes
+
+
+def parse_args(args):
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--mimic_dir", type=Path,
+                        help="The directory containing MIMIC data files.", required=True)
+    args = parser.parse_args()
+    return args
+
+
+def main(args):
+    args = parse_args(args)
+    mimic_files = [
+        "DIAGNOSES_ICD.csv",
+        "PATIENTS.csv",
+        "ADMISSIONS.csv",
+        "NOTEEVENTS.csv",
+    ]
+    found_files = [f for f in mimic_files if (
+        args.mimic_dir / Path(f)).exists()]
+
+    if len(found_files) != len(mimic_files):
+        raise RuntimeError(
+            "Unable to locate MIMIC data files in specified directory.")
+
+    diag_df, copd_ids = identify_copd_admits(args.mimic_dir)
+    admits = identify_30d_readmits(args.mimic_dir, diag_df, copd_ids)
+    notes = retrieve_discharge_notes(args.mimic_dir, admits)
+    print(
+        f"MIMIC data prep complete, {notes.shape[0]} discharge summaries processed.")
+
+
+if __name__ == '__main__':
+    import sys
+    main(sys.argv[1:])
