@@ -1,12 +1,14 @@
 import argparse
 from pathlib import Path
 
+import pandas as pd
 import torch
 from transformers import BertModel, BertConfig, BertTokenizer
 
 
-def tokenize(tokenizer, text_data, batch_size=128, seq_length=64):
+def tokenize(tokenizer, text_file, batch_size=128, seq_length=64):
     token_li = []
+    text_data = pd.read_csv(text_file)['TEXT']
     for i in range(text_data.shape[0] // batch_size + 1):
         start_idx = i * batch_size
         stop_idx = (i + 1) * batch_size
@@ -60,16 +62,19 @@ def main(args):
 
     # load BERT
     print("Loading pre-trained BERT...")
-    bert_tokenizer = BertTokenizer.from_pretrained(args.bert_dir)
+    bert_tokenizer = BertTokenizer.from_pretrained(str(args.bert_dir))
     bert_config = BertConfig.from_json_file(
-        args.bert_dir.glob("*config.json")[0])
+        list(args.bert_dir.glob("*config.json"))[0]
+    )
     model = BertModel.from_pretrained(
-        args.bert_dir.glob("*model.bin")[0], config=bert_config)
+        list(args.bert_dir.glob("*model.bin"))[0],
+        config=bert_config
+    )
     # tokenize text
     print("Tokenizing...")
     tokens = tokenize(
         tokenizer=bert_tokenizer,
-        text_data=args.text_data,
+        text_file=args.text_data,
         batch_size=args.batch_size,
         seq_length=args.seq_length,
     )
