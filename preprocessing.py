@@ -188,11 +188,15 @@ def main(args):
     if len(found_files) != len(mimic_files):
         raise RuntimeError(
             "Unable to locate MIMIC data files in specified directory.")
-
+    print("Loading diagnosis codes...")
     diag_df, copd_ids = identify_copd_admits(args.mimic_dir)
+    print("Loading admissions...")
     admits = identify_30d_readmits(args.mimic_dir, diag_df, copd_ids)
+    print("Loading discharge notes...")
     notes = retrieve_discharge_notes(args.mimic_dir, admits)
+    print("Preprocessing text data...")
     text_data, labels = preprocess_notes(notes, args.char_limit)
+    print("Saving file...")
     save_data(args.mimic_dir, text_data, labels, args.char_limit)
 
     print(

@@ -66,19 +66,21 @@ def main(args):
     model = BertModel.from_pretrained(
         args.bert_dir.glob("*model.bin")[0], config=bert_config)
     # tokenize text
+    print("Tokenizing...")
     tokens = tokenize(
         tokenizer=bert_tokenizer,
         text_data=args.text_data,
         batch_size=args.batch_size,
         seq_length=args.seq_length,
     )
-    print("Tokenization completed.")
     # generate embeddings
+    print("Embedding...")
     embeddings = embed(model=model, token_batches=tokens)
-    print("Embedding completed.")
     # save to disk
+    print("Saving...")
     torch.save(embeddings, args.output_dir /
                Path(f"mimic_discharge_summaries_bert_{args.seq_length}tkns.pt"))
+    print("Completed.")
 
 
 if __name__ == '__main__':
