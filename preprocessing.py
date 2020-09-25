@@ -129,6 +129,29 @@ def retrieve_discharge_notes(mimic_path, admits_df):
     return notes
 
 
+def preprocess_notes(notes, char_limit=2500):
+
+    text_data = notes[notes['HOSPITAL_EXPIRE_FLAG'] == 0]['TEXT']\
+        .fillna(' ')\
+        .str.replace('\n', ' ')\
+        .str.replace('\r', ' ')\
+        .str.replace(r'\[\*\*(\d{4}-\d{1,2}-\d{1,2})\*\*\]',
+                     '<DATE>', regex=True)\
+        .str.replace(r'\[\*\*([\da-zA-Z() \(\)]*?(?:Name|name)[\da-zA-Z \(\)]*?)\*\*\]',
+                     '<NAME>', regex=True)\
+        .str.replace(r'\[\*\*([\d-]*?)\*\*\]',
+                     '<NUMBER>', regex=True)\
+        .str.replace(r'\[\*\*(Hospital.*?)\*\*\]',
+                     '<HOSPITAL>', regex=True)\
+        .str.replace(r'\[\*\*(.*?)\*\*\]',
+                     '<UNK>', regex=True)\
+        .str[:char_limit]
+
+    labels = notes[notes['HOSPITAL_EXPIRE_FLAG'] == 0]['30d_readmit']
+
+    return text_data, labels
+
+
 def parse_args(args):
     parser = argparse.ArgumentParser()
     parser.add_argument("--mimic_dir", type=Path,
