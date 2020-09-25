@@ -152,10 +152,24 @@ def preprocess_notes(notes, char_limit=2500):
     return text_data, labels
 
 
+def save_data(path, text_data, labels, char_limit):
+    text_data.to_csv(
+        path / Path(f"mimic_discharge_summaries_{char_limit}chars.csv"),
+        index=False
+    )
+
+    labels.to_csv(
+        path / Path("mimic_30d_readmit_labels.csv"),
+        index=False
+    )
+
+
 def parse_args(args):
     parser = argparse.ArgumentParser()
-    parser.add_argument("--mimic_dir", type=Path,
+    parser.add_argument("--mimic-dir", type=Path,
                         help="The directory containing MIMIC data files.", required=True)
+    parser.add_argument("--char-limit", type=int, default=2500,
+                        help="Number of characters for truncating output text data")
     args = parser.parse_args()
     return args
 
@@ -178,6 +192,9 @@ def main(args):
     diag_df, copd_ids = identify_copd_admits(args.mimic_dir)
     admits = identify_30d_readmits(args.mimic_dir, diag_df, copd_ids)
     notes = retrieve_discharge_notes(args.mimic_dir, admits)
+    text_data, labels = preprocess_notes(notes, args.char_limit)
+    save_data(args.mimic_dir, text_data, labels, args.char_limit)
+
     print(
         f"MIMIC data prep complete, {notes.shape[0]} discharge summaries processed.")
 
