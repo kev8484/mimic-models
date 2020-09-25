@@ -23,6 +23,8 @@ def train(args, states=None):
         num_filters=config.train.num_filters,
         dropout_rate=config.train.dropout,
     )
+    if torch.cuda.is_available():
+        model.cuda()
 
     loss_function = nn.CrossEntropyLoss()
     optimizer = torch.optim.Adam(model.parameters(), lr=config.train.lr)
@@ -37,6 +39,9 @@ def train(args, states=None):
         for i, data in enumerate(train_loader, 0):
             # get the inputs; data is a list of [inputs, labels]
             inputs, labels = data
+
+            if torch.cuda.is_available():
+                inputs, labels = inputs.cuda(), labels.cuda()
 
             # zero the parameter gradients
             optimizer.zero_grad()
