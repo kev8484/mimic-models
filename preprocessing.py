@@ -203,6 +203,8 @@ def parse_args(args):
                         help="The local directory containing MIMIC data files, otherwise download from AWS")
     parser.add_argument("--char-limit", type=int, default=2500,
                         help="Number of characters for truncating output text data")
+    parser.add_argument("--out-dir", type=Path, default=Path.cwd(),
+                        help="Output directory to write processed data and label files to")
     args = parser.parse_args()
     return args
 
@@ -231,7 +233,7 @@ def main(args):
     print("Preprocessing text data...")
     text_data, labels = preprocess_notes(notes, args.char_limit)
     print("Saving file...")
-    save_data(args.mimic_dir, text_data, labels, args.char_limit)
+    save_data(args.out_dir, text_data, labels, args.char_limit)
 
     print(
         f"MIMIC data prep complete, {notes.shape[0]} discharge summaries processed.")
