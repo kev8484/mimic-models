@@ -3,6 +3,13 @@ from pathlib import Path
 
 import numpy as np
 import pandas as pd
+import s3fs
+
+
+S3_PATH_NOTES = "s3://mimic-iii-physionet/NOTEEVENTS.csv.gz"
+S3_PATH_DIAGNOSES = "s3://mimic-iii-physionet/DIAGNOSES_ICD.csv.gz"
+S3_PATH_PATIENTS = "s3://mimic-iii-physionet/PATIENTS.csv.gz"
+S3_PATH_ADMISSIONS = "s3://mimic-iii-physionet/ADMISSIONS.csv.gz"
 
 
 def identify_copd_admits(mimic_path):
@@ -25,8 +32,10 @@ def identify_copd_admits(mimic_path):
         "4920",
         "4928",
     ]
-
-    df = pd.read_csv(mimic_path / Path("DIAGNOSES_ICD.csv"))
+    if mimic_path is None:
+        df = pd.read_csv(S3_PATH_DIAGNOSES)
+    else:
+        df = pd.read_csv(mimic_path / Path("DIAGNOSES_ICD.csv"))
     copd_hadmids = df[df.ICD9_CODE.isin(
         strict_icd9 + reg_icd9)].HADM_ID.unique()
 
@@ -36,9 +45,12 @@ def identify_copd_admits(mimic_path):
 def identify_30d_readmits(mimic_path, icd_df, copd_ids):
     """ Identify readmissions and flag 30 day readmits
     """
-
-    patients = pd.read_csv(mimic_path / Path("PATIENTS.csv"),
-                           parse_dates=['DOB', 'DOD', 'DOD_HOSP'])
+    if mimic_path is None:
+        patients = pd.read_csv(S3_PATH_PATIENTS, parse_dates=[
+                               'DOB', 'DOD', 'DOD_HOSP'])
+    else:
+        patients = pd.read_csv(mimic_path / Path("PATIENTS.csv"),
+                               parse_dates=['DOB', 'DOD', 'DOD_HOSP'])
 
     admission_cols = [
         'HADM_ID',
@@ -51,8 +63,20 @@ def identify_30d_readmits(mimic_path, icd_df, copd_ids):
         'HOSPITAL_EXPIRE_FLAG',
         'HAS_CHARTEVENTS_DATA',
     ]
-    admits = pd.read_csv(mimic_path / Path("ADMISSIONS.csv"), parse_dates=[
-                         'ADMITTIME', 'DISCHTIME', 'DEATHTIME', 'EDREGTIME', 'EDOUTTIME', ], usecols=admission_cols)
+    if mimic_path is None:
+        admits = pd.read_csv(
+            S3_PATH_ADMISSIONS,
+            parse_dates=['ADMITTIME', 'DISCHTIME',
+                         'DEATHTIME', 'EDREGTIME', 'EDOUTTIME'],
+            usecols=admission_cols
+        )
+    else:
+        admits = pd.read_csv(
+            mimic_path / Path("ADMISSIONS.csv"),
+            parse_dates=['ADMITTIME', 'DISCHTIME',
+                         'DEATHTIME', 'EDREGTIME', 'EDOUTTIME'],
+            usecols=admission_cols
+        )
 
     # concat primary dx onto admissions
     admits = admits.merge(icd_df, on=['HADM_ID']).drop_duplicates(
@@ -95,12 +119,22 @@ def identify_30d_readmits(mimic_path, icd_df, copd_ids):
 
 
 def retrieve_discharge_notes(mimic_path, admits_df):
-    chunk_reader = pd.read_csv(
-        mimic_path / Path("NOTEEVENTS.csv"),
-        chunksize=100000,
-        usecols=['SUBJECT_ID', 'HADM_ID', 'CHARTDATE',
-                 'CATEGORY', 'DESCRIPTION', 'TEXT', ]
-    )
+    """ Retrieve discharge summaries and attach 30d readmit outcomes
+    """
+    if mimic_path is None:
+        chunk_reader = pd.read_csv(
+            S3_PATH_NOTES,
+            chunksize=100000,
+            usecols=['SUBJECT_ID', 'HADM_ID', 'CHARTDATE',
+                     'CATEGORY', 'DESCRIPTION', 'TEXT', ]
+        )
+    else:
+        chunk_reader = pd.read_csv(
+            mimic_path / Path("NOTEEVENTS.csv"),
+            chunksize=100000,
+            usecols=['SUBJECT_ID', 'HADM_ID', 'CHARTDATE',
+                     'CATEGORY', 'DESCRIPTION', 'TEXT', ]
+        )
     chunk_li = []
     for chunk in chunk_reader:
         chunk_li.append(chunk[(chunk['CATEGORY'] == 'Discharge summary')])
@@ -166,8 +200,8 @@ def save_data(path, text_data, labels, char_limit):
 
 def parse_args(args):
     parser = argparse.ArgumentParser()
-    parser.add_argument("--mimic-dir", type=Path,
-                        help="The directory containing MIMIC data files.", required=True)
+    parser.add_argument("--mimic-dir", type=Path, default=None,
+                        help="The local directory containing MIMIC data files, otherwise download from AWS")
     parser.add_argument("--char-limit", type=int, default=2500,
                         help="Number of characters for truncating output text data")
     args = parser.parse_args()
@@ -182,12 +216,13 @@ def main(args):
         "ADMISSIONS.csv",
         "NOTEEVENTS.csv",
     ]
-    found_files = [f for f in mimic_files if (
-        args.mimic_dir / Path(f)).exists()]
+    if args.mimic_dir is not None:
+        found_files = [f for f in mimic_files if (
+            args.mimic_dir / Path(f)).exists()]
 
-    if len(found_files) != len(mimic_files):
-        raise RuntimeError(
-            "Unable to locate MIMIC data files in specified directory.")
+        if len(found_files) != len(mimic_files):
+            raise RuntimeError(
+                "Unable to locate MIMIC data files in specified directory.")
     print("Loading diagnosis codes...")
     diag_df, copd_ids = identify_copd_admits(args.mimic_dir)
     print("Loading admissions...")
