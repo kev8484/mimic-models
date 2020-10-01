@@ -48,7 +48,7 @@ def embed(model, token_batches):
 
 def parse_args(args):
     parser = argparse.ArgumentParser()
-    parser.add_argument("--bert-dir", type=Path, default=None,
+    parser.add_argument("--bert-dir", type=Path, required=True,
                         help="The directory containing pre-trained BERT models")
     parser.add_argument("--text-data", type=Path,
                         help="File containing text data to embed", required=True)
@@ -67,6 +67,7 @@ def main(args):
 
     # load BERT
     print("Loading pre-trained BERT...")
+
     bert_tokenizer = BertTokenizer.from_pretrained(str(args.bert_dir))
     bert_config = BertConfig.from_json_file(
         list(args.bert_dir.glob("*config.json"))[0]
@@ -75,6 +76,7 @@ def main(args):
         list(args.bert_dir.glob("*model.bin"))[0],
         config=bert_config
     )
+
     # tokenize text
     print("Tokenizing...")
     tokens = tokenize(
