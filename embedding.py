@@ -6,6 +6,11 @@ import torch
 from transformers import BertModel, BertConfig, BertTokenizer
 
 
+S3_BERT_DIR = "s3://mimic-deeplearning-text-cnn/bert/"
+S3_BERT_CONFIG = S3_BERT_DIR + "bert_config.json"
+S3_BERT_MODEL = S3_BERT_DIR + "pytorch_model.bin"
+
+
 def tokenize(tokenizer, text_file, batch_size=128, seq_length=64):
     token_li = []
     text_data = pd.read_csv(text_file)['TEXT']
