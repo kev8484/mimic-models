@@ -48,12 +48,12 @@ def embed(model, token_batches):
 
 def parse_args(args):
     parser = argparse.ArgumentParser()
-    parser.add_argument("--bert-dir", type=Path,
-                        help="The directory containing pre-trained BERT models", required=True)
+    parser.add_argument("--bert-dir", type=Path, default=None,
+                        help="The directory containing pre-trained BERT models")
     parser.add_argument("--text-data", type=Path,
                         help="File containing text data to embed", required=True)
-    parser.add_argument("--output-dir", type=Path,
-                        help="The directory to save the word embedding tensors", required=True)
+    parser.add_argument("--output-dir", type=Path, default=Path.cwd(),
+                        help="The directory to save the word embedding tensors")
     parser.add_argument("-b", "--batch-size", type=int, default=128,
                         help="Batch size to feed into tokenizer and word embedder")
     parser.add_argument("--seq-length", type=int, default=64,
