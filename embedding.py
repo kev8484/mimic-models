@@ -1,14 +1,43 @@
 import argparse
 from pathlib import Path
 
+import boto3
 import pandas as pd
 import torch
 from transformers import BertModel, BertConfig, BertTokenizer
 
 
-S3_BERT_DIR = "s3://mimic-deeplearning-text-cnn/bert/"
-S3_BERT_CONFIG = S3_BERT_DIR + "bert_config.json"
-S3_BERT_MODEL = S3_BERT_DIR + "pytorch_model.bin"
+S3_BUCKET = "mimic-deeplearning-text-cnn"
+S3_BERT_CONFIG = "bert/bert_config.json"
+S3_BERT_MODEL = "bert/pytorch_model.bin"
+S3_BERT_VOCAB = "bert/vocab.txt"
+S3_DATA_DIR = "s3://mimic-deeplearning-text-cnn/data/"
+
+
+def fetch_bert(s3_bucket):
+    # create local directory to store fetched objects
+    local_bert_dir = Path.cwd() / Path("bert")
+    local_bert_dir.mkdir(exist_ok=True)
+    # define target file names
+    local_config = str(local_bert_dir) + '/bert_config.json'
+    local_model = str(local_bert_dir) + '/pytorch_model.bin'
+    local_vocab = str(local_bert_dir) + '/vocab.txt'
+    # download objects
+    s3_bucket.download_file(S3_BERT_CONFIG, local_config)
+    s3_bucket.download_file(S3_BERT_MODEL, local_model)
+    s3_bucket.download_file(S3_BERT_VOCAB, local_vocab)
+
+    # Note: tokenizer requires directory containing vocab file, not
+    # the vocab file itself
+    return str(local_bert_dir), local_config, local_model
+
+
+def load_bert(bert_dir, bert_config, bert_model):
+    tokenizer = BertTokenizer.from_pretrained(bert_dir)
+    config = BertConfig.from_pretrained(bert_config)
+    model = BertModel.from_pretrained(bert_model, config=config)
+
+    return tokenizer, model
 
 
 def tokenize(tokenizer, text_file, batch_size=128, seq_length=64):
@@ -58,6 +87,8 @@ def parse_args(args):
                         help="Batch size to feed into tokenizer and word embedder")
     parser.add_argument("--seq-length", type=int, default=64,
                         help="Number of tokens in output sequence (will pad or truncate as needed)")
+    parser.add_argument("--aws", action="store_true",
+                        help="Store output to AWS S3 bucket")
     args = parser.parse_args()
     return args
 
@@ -67,15 +98,20 @@ def main(args):
 
     # load BERT
     print("Loading pre-trained BERT...")
+    if args.aws:
+        # fetch objects from s3 bucket
+        s3 = boto3.resource('s3')
+        bucket = s3.Bucket(S3_BUCKET)
+        # returns local paths to downloaded objects
+        bert_dir, bert_config, bert_model = fetch_bert(bucket)
+    else:
+        # retrieve from local directory
+        bert_dir = str(args.bert_dir)
+        bert_config = list(args.bert_dir.glob("*config.json"))[0]
+        bert_model = list(args.bert_dir.glob("*model.bin"))[0]
 
-    bert_tokenizer = BertTokenizer.from_pretrained(str(args.bert_dir))
-    bert_config = BertConfig.from_json_file(
-        list(args.bert_dir.glob("*config.json"))[0]
-    )
-    model = BertModel.from_pretrained(
-        list(args.bert_dir.glob("*model.bin"))[0],
-        config=bert_config
-    )
+    # load the tokenizer and model
+    bert_tokenizer, model = load_bert(bert_dir, bert_config, bert_model)
 
     # tokenize text
     print("Tokenizing...")
