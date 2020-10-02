@@ -18,7 +18,7 @@ def fetch_bert(s3_bucket):
     # create local directory to store fetched objects
     local_bert_dir = Path.cwd() / Path("bert")
     local_bert_dir.mkdir(exist_ok=True)
-    # define target file names
+    # define target file names (s3 client requires string formatted paths)
     local_config = str(local_bert_dir) + '/bert_config.json'
     local_model = str(local_bert_dir) + '/pytorch_model.bin'
     local_vocab = str(local_bert_dir) + '/vocab.txt'
@@ -85,7 +85,7 @@ def parse_args(args):
                         help="The directory to save the word embedding tensors")
     parser.add_argument("-b", "--batch-size", type=int, default=128,
                         help="Batch size to feed into tokenizer and word embedder")
-    parser.add_argument("--seq-length", type=int, default=64,
+    parser.add_argument("--seq-length", type=int, default=128,
                         help="Number of tokens in output sequence (will pad or truncate as needed)")
     parser.add_argument("--aws", action="store_true",
                         help="Store output to AWS S3 bucket")
