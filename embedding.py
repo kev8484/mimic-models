@@ -11,6 +11,7 @@ S3_BUCKET = "mimic-deeplearning-text-cnn"
 S3_BERT_CONFIG = "bert/bert_config.json"
 S3_BERT_MODEL = "bert/pytorch_model.bin"
 S3_BERT_VOCAB = "bert/vocab.txt"
+S3_RAW_TEXT = "data/mimic_discharge_summaries_2500chars.csv"
 
 
 def fetch_bert(s3_bucket):
@@ -37,6 +38,18 @@ def load_bert(bert_dir, bert_config, bert_model):
     model = BertModel.from_pretrained(bert_model, config=config)
 
     return tokenizer, model
+
+
+def fetch_raw_data(s3_bucket):
+    # create local directory to store fetched objects
+    local_data_dir = Path.cwd() / Path("data")
+    local_data_dir.mkdir(exist_ok=True)
+    # define target file names (s3 API requires string formatted paths)
+    local_raw_data = str(local_data_dir) + 'raw_text_data.csv'
+    # download object
+    s3_bucket.download_file(S3_RAW_TEXT, local_raw_data)
+
+    return local_raw_data
 
 
 def tokenize(tokenizer, text_file, batch_size=128, seq_length=64):
@@ -79,7 +92,7 @@ def parse_args(args):
     parser.add_argument("--bert-dir", type=Path, required=True,
                         help="The directory containing pre-trained BERT models")
     parser.add_argument("--text-data", type=Path,
-                        help="File containing text data to embed", required=True)
+                        help="File containing text data to embed")
     parser.add_argument("--output-dir", type=Path, default=Path.cwd(),
                         help="The directory to save the word embedding tensors")
     parser.add_argument("-b", "--batch-size", type=int, default=128,
@@ -111,12 +124,16 @@ def main(args):
 
     # load the tokenizer and model
     bert_tokenizer, model = load_bert(bert_dir, bert_config, bert_model)
-
+    # fetch raw text csv from S3 or get from local path
+    if args.aws:
+        raw_data = fetch_raw_data(bucket)
+    else:
+        raw_data = args.text_data
     # tokenize text
     print("Tokenizing...")
     tokens = tokenize(
         tokenizer=bert_tokenizer,
-        text_file=args.text_data,
+        text_file=raw_data,
         batch_size=args.batch_size,
         seq_length=args.seq_length,
     )
