@@ -11,14 +11,13 @@ S3_BUCKET = "mimic-deeplearning-text-cnn"
 S3_BERT_CONFIG = "bert/bert_config.json"
 S3_BERT_MODEL = "bert/pytorch_model.bin"
 S3_BERT_VOCAB = "bert/vocab.txt"
-S3_DATA_DIR = "s3://mimic-deeplearning-text-cnn/data/"
 
 
 def fetch_bert(s3_bucket):
     # create local directory to store fetched objects
     local_bert_dir = Path.cwd() / Path("bert")
     local_bert_dir.mkdir(exist_ok=True)
-    # define target file names (s3 client requires string formatted paths)
+    # define target file names (s3 API requires string formatted paths)
     local_config = str(local_bert_dir) + '/bert_config.json'
     local_model = str(local_bert_dir) + '/pytorch_model.bin'
     local_vocab = str(local_bert_dir) + '/vocab.txt'
@@ -125,9 +124,15 @@ def main(args):
     print("Embedding...")
     embeddings = embed(model=model, token_batches=tokens)
     # save to disk
-    print("Saving...")
-    torch.save(embeddings, args.output_dir /
-               Path(f"mimic_discharge_summaries_bert_{args.seq_length}tkns.pt"))
+    print("Saving locally...")
+    outfile = str(args.output_dir) + \
+        f"mimic_discharge_summaries_bert_{args.seq_length}tkns.pt"
+    torch.save(embeddings, outfile)
+
+    if args.aws:
+        print("Uploading to S3 bucket...")
+        s3.upload_file(
+            outfile, S3_BUCKET, f"data/mimic_discharge_summaries_bert_{args.seq_length}tkns.pt")
     print("Completed.")
 
 
