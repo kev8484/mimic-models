@@ -3,9 +3,11 @@ data = "./data/data.pt"
 labels = "./data/labels.pt"
 
 [train]
-batch_size = 32
+random_seed = 42
+correct_imbalance = true
+batch_size = 128
 num_epochs = 5
 embedding_size = 768
 num_filters = 64
 dropout = 0.5
-lr=0.001
+lr = 0.001

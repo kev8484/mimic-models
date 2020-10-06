@@ -14,7 +14,9 @@ def train(args, states=None):
     train_loader, val_loader, test_loader = load_dataset(
         data_path=config.files.data,
         labels_path=config.files.labels,
-        batch_size=config.train.batch_size
+        batch_size=config.train.batch_size,
+        random_seed=config.train.random_seed,
+        balance=config.train.correct_imbalance,
     )
 
     model = TextCNN(
