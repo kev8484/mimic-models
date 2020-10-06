@@ -45,7 +45,7 @@ def fetch_raw_data(s3_bucket):
     local_data_dir = Path.cwd() / Path("data")
     local_data_dir.mkdir(exist_ok=True)
     # define target file names (s3 API requires string formatted paths)
-    local_raw_data = str(local_data_dir) + 'raw_text_data.csv'
+    local_raw_data = str(local_data_dir) + '/raw_text_data.csv'
     # download object
     s3_bucket.download_file(S3_RAW_TEXT, local_raw_data)
 
