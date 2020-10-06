@@ -143,7 +143,7 @@ def main(args):
     # save to disk
     print("Saving locally...")
     outfile = str(args.output_dir) + \
-        f"mimic_discharge_summaries_bert_{args.seq_length}tkns.pt"
+        f"/mimic_discharge_summaries_bert_{args.seq_length}tkns.pt"
     torch.save(embeddings, outfile)
 
     if args.aws:
