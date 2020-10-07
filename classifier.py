@@ -150,6 +150,9 @@ def main(args):
 
 if __name__ == '__main__':
     logging.basicConfig(
-        format="%(levelname)s\t%(asctime)s\t%(message)s", level=logging.INFO)
+        filename="train.log",
+        format="%(levelname)s\t%(asctime)s\t%(message)s",
+        level=logging.INFO
+    )
     import sys
     main(sys.argv[1:])
