@@ -5,7 +5,7 @@ import torch
 import torch.nn as nn
 
 from model import TextCNN
-from utils import load_dataset
+from utils import load_dataset, save_model_state
 import config
 
 
@@ -67,6 +67,17 @@ def train(args, states=None):
                 dev_acc = eval(val_loader, model, loss_function)
                 if dev_acc > best_acc:
                     best_acc = dev_acc
+                    states = {
+                        "epoch": epoch,
+                        "step": i,
+                        "model": model.state_dict(),
+                        "optimizer": optimizer.state_dict()
+                    }
+                    save_model_state(
+                        save_dir=args.model_dir,
+                        step=i,
+                        state=states
+                    )
 
     print(f"Finished Training, best accuracy: {best_acc}")
 

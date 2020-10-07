@@ -1,3 +1,4 @@
+from pathlib import Path
 import numpy as np
 import torch
 
@@ -106,3 +107,10 @@ def balanced_sampler(labels, random_seed=None):
         generator=generator,
     )
     return sampler
+
+
+def save_model_state(save_dir, step, states):
+    Path(save_dir).mkdir(parents=True, exist_ok=True)
+    filename = f"best_steps_{step}.pt"
+    full_path = Path(save_dir) / Path(filename)
+    torch.save(states, str(full_path))
