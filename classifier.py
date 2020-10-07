@@ -150,7 +150,6 @@ def main(args):
 
 if __name__ == '__main__':
     logging.basicConfig(
-        filename="train.log",
         format="%(levelname)s\t%(asctime)s\t%(message)s",
         level=logging.INFO
     )
