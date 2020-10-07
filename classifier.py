@@ -58,12 +58,12 @@ def train(args, states=None):
 
             # Log summary
             running_losses.append(loss.data[0])
-            if i % args.summary_interval == 0:
+            if i % args.log_interval == 0:
                 interval_loss = sum(running_losses) / len(running_losses)
                 logging.info(f"step = {i}, loss = {interval_loss}")
                 running_losses = []
 
-            if i % args.eval_interval == 0:
+            if i % args.test_interval == 0:
                 dev_acc = eval(val_loader, model, loss_function)
                 if dev_acc > best_acc:
                     best_acc = dev_acc
@@ -96,21 +96,21 @@ def parse_args(args):
     subparsers = parser.add_subparsers(title="subcommands", dest="subcommand")
 
     def add_common_arguments(parser):
-        parser.add_argument("-m", "--model_dir", type=str, required=True,
+        parser.add_argument("-m", "--model-dir", type=str, required=True,
                             help="The directory where a trained model is saved")
-        parser.add_argument("-c", "--config_file",
+        parser.add_argument("-c", "--config-file",
                             help="The path to the configuration file")
 
     # For train mode
     parser_train = subparsers.add_parser("train", help="train a model")
     add_common_arguments(parser_train)
-    parser_train.add_argument("--checkpoint_interval", default=1000, type=int,
+    parser_train.add_argument("--checkpoint-interval", default=1000, type=int,
                               help="The period at which a checkpoint file will be created")
-    parser_train.add_argument("--keep_checkpoint_max", default=5,
+    parser_train.add_argument("--keep-checkpoint-max", default=5,
                               type=int, help="The number of checkpoint files to be preserved")
-    parser_train.add_argument("--summary_interval", default=50,
+    parser_train.add_argument("--log-interval", default=50,
                               type=int, help="Number of batches to print summary")
-    parser_train.add_argument("--eval_interval", default=100,
+    parser_train.add_argument("--test-interval", default=100,
                               type=int, help="Number of batches to run validation test")
 
     # For predict mode
