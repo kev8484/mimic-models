@@ -119,9 +119,9 @@ def parse_args(args):
                               help="The period at which a checkpoint file will be created")
     parser_train.add_argument("--keep-checkpoint-max", default=5,
                               type=int, help="The number of checkpoint files to be preserved")
-    parser_train.add_argument("--log-interval", default=50,
+    parser_train.add_argument("--log-interval", default=30,
                               type=int, help="Number of batches to print summary")
-    parser_train.add_argument("--test-interval", default=100,
+    parser_train.add_argument("--test-interval", default=50,
                               type=int, help="Number of batches to run validation test")
 
     # For predict mode
