@@ -1,6 +1,6 @@
 [files]
-data = "./data/data.pt"
-labels = "./data/labels.pt"
+data = "./data/mimic_discharge_summaries_bert_128tkns.pt"
+labels = "./data/mimic_30d_readmit_labels.pt"
 
 [train]
 random_seed = 42
