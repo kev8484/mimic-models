@@ -1,5 +1,5 @@
 import toml
-CONFIG_FILE_NAME = "config.yml"
+CONFIG_FILE_NAME = "model_config.toml"
 
 
 def load(path):
