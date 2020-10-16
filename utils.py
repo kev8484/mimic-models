@@ -66,7 +66,11 @@ def train_test_split(data, labels, train_size=0.8, random_seed=None):
     """ Split data into training and test sets.
     """
     train_len = int(np.floor(train_size * len(data)))
-    test_len = len(data) - train_size
+    test_len = len(data) - train_len
+
+    if len(data) != len(labels):
+        raise ValueError(
+            f"Input data length ({len(data)}) and input label length ({len(labels)}) don't match")
 
     if random_seed is not None:
         generator = torch.Generator().manual_seed(random_seed)
