@@ -6,7 +6,7 @@ import torch.nn as nn
 
 from model import TextCNN
 from utils import load_dataset, save_model_state
-import config
+import toml_config
 
 
 def train(args, states=None):
@@ -135,8 +135,8 @@ def main(args):
     args = parse_args(args)
 
     if args.subcommand == "train":
-        config.load(args.config_file)
-        config.save(args.model_dir)
+        toml_config.load(args.config_file)
+        toml_config.save(args.model_dir)
         states = None
         train(args, states)
 
