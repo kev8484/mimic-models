@@ -15,29 +15,29 @@ def train(args, states=None):
     config = config_obj.elements
 
     train_loader, val_loader, test_loader = load_dataset(
-        data_path=config.data,
-        labels_path=config.labels,
-        batch_size=config.batch_size,
-        random_seed=config.random_seed,
-        balance=config.correct_imbalance,
+        data_path=config['data'],
+        labels_path=config['labels'],
+        batch_size=config['batch_size'],
+        random_seed=config['random_seed'],
+        balance=config['correct_imbalance'],
     )
 
     model = TextCNN(
-        num_classes=config.num_classes,
-        embedding_size=config.embedding_size,
-        num_filters=config.num_filters,
-        dropout_rate=config.dropout,
+        num_classes=config['num_classes'],
+        embedding_size=config['embedding_size'],
+        num_filters=config['num_filters'],
+        dropout_rate=config['dropout'],
     )
     if torch.cuda.is_available():
         model.cuda()
 
     loss_function = nn.CrossEntropyLoss()
-    optimizer = torch.optim.Adam(model.parameters(), lr=config.lr)
+    optimizer = torch.optim.Adam(model.parameters(), lr=config['lr'])
 
     best_acc = 0
 
     # loop over the dataset multiple times
-    for epoch in range(1, config.num_epochs + 1):
+    for epoch in range(1, config['num_epochs'] + 1):
         logging.info(
             f"==================== Epoch: {epoch} ====================")
         running_losses = []
