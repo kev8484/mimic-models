@@ -12,29 +12,29 @@ import config
 def train(args, states=None):
 
     train_loader, val_loader, test_loader = load_dataset(
-        data_path=config.files.data,
-        labels_path=config.files.labels,
-        batch_size=config.train.batch_size,
-        random_seed=config.train.random_seed,
-        balance=config.train.correct_imbalance,
+        data_path=config['files']['data'],
+        labels_path=config['files']['labels'],
+        batch_size=config['train']['batch_size'],
+        random_seed=config['train']['random_seed'],
+        balance=config['train']['correct_imbalance'],
     )
 
     model = TextCNN(
-        num_classes=config.train.num_classes,
-        embedding_size=config.train.embedding_size,
-        num_filters=config.train.num_filters,
-        dropout_rate=config.train.dropout,
+        num_classes=config['train']['num_classes'],
+        embedding_size=config['train']['embedding_size'],
+        num_filters=config['train']['num_filters'],
+        dropout_rate=config['train']['dropout'],
     )
     if torch.cuda.is_available():
         model.cuda()
 
     loss_function = nn.CrossEntropyLoss()
-    optimizer = torch.optim.Adam(model.parameters(), lr=config.train.lr)
+    optimizer = torch.optim.Adam(model.parameters(), lr=config['train']['lr'])
 
     best_acc = 0
 
     # loop over the dataset multiple times
-    for epoch in range(1, config.train.num_epochs + 1):
+    for epoch in range(1, config['train']['num_epochs'] + 1):
         logging.info(
             f"==================== Epoch: {epoch} ====================")
         running_losses = []
@@ -115,10 +115,6 @@ def parse_args(args):
     # For train mode
     parser_train = subparsers.add_parser("train", help="train a model")
     add_common_arguments(parser_train)
-    parser_train.add_argument("--checkpoint-interval", default=1000, type=int,
-                              help="The period at which a checkpoint file will be created")
-    parser_train.add_argument("--keep-checkpoint-max", default=5,
-                              type=int, help="The number of checkpoint files to be preserved")
     parser_train.add_argument("--log-interval", default=30,
                               type=int, help="Number of batches to print summary")
     parser_train.add_argument("--test-interval", default=50,
