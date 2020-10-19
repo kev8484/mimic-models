@@ -92,7 +92,7 @@ class TextCNN(nn.Module):
         x = self.dropout(x)  # (batch_size, len(kernel_sizes) * out_channels)
         logits = self.fc(x)  # (batch_size, num_classes)
 
-        probs = F.softmax(logits)  # (batch_size, num_classes)
+        probs = F.softmax(logits, dim=1)  # (batch_size, num_classes)
         classes = torch.max(probs, 1)[1]  # (batch_size)
 
         return probs, classes
