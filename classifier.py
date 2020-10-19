@@ -13,7 +13,7 @@ def train(args, states=None):
 
     config_obj = Config(args.config_file)
     config = config_obj.elements
-
+    logging.info("Loading datasets...")
     train_loader, val_loader, test_loader = load_dataset(
         data_path=config['data'],
         labels_path=config['labels'],
@@ -60,7 +60,7 @@ def train(args, states=None):
             optimizer.step()
 
             # Log summary
-            running_losses.append(loss.data[0])
+            running_losses.append(loss.item())
             if i % args.log_interval == 0:
                 interval_loss = sum(running_losses) / len(running_losses)
                 logging.info(f"step = {i}, loss = {interval_loss}")
@@ -79,7 +79,7 @@ def train(args, states=None):
                     save_model_state(
                         save_dir=args.model_dir,
                         step=i,
-                        state=states
+                        states=states
                     )
 
     print(f"Finished Training, best accuracy: {best_acc}")
