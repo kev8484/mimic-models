@@ -65,29 +65,29 @@ def tensors_to_loader(data, labels, batch_size=32, random_seed=None, balance=Fal
 def train_test_split(data, labels, train_size=0.8, random_seed=None):
     """ Split data into training and test sets.
     """
-    train_len = int(np.floor(train_size * len(data)))
-    test_len = len(data) - train_len
+    train_len = int(np.floor(train_size * data.shape[0]))
+    test_len = data.shape[0] - train_len
 
-    if len(data) != len(labels):
+    if data.shape[0] != labels.shape[0]:
         raise ValueError(
-            f"Input data length ({len(data)}) and input label length ({len(labels)}) don't match")
+            f"Input data length ({data.shape[0]}) and input label length ({labels.shape[0]}) don't match")
 
     if random_seed is not None:
-        generator = torch.Generator().manual_seed(random_seed)
-    else:
-        generator = None
+        np.random.seed(random_seed)
 
-    train_data, test_data = torch.utils.data.random_split(
-        data,
-        (train_len, test_len),
-        generator=generator
-    )
+    # randomly assign indices to training and test sets
+    shuffle_indices = np.random.permutation(data.shape[0])
+    train_indices, test_indices = shuffle_indices[:
+                                                  train_len], shuffle_indices[train_len:]
 
-    train_labels, test_labels = torch.utils.data.random_split(
-        labels,
-        (train_len, test_len),
-        generator=generator
-    )
+    if len(train_indices) != train_len or len(test_indices) != test_len:
+        raise ValueError(f"Random sampling produced inconsistent data sets.")
+
+    train_data = data[train_indices, :]
+    train_labels = labels[train_indices]
+
+    test_data = data[test_indices, :]
+    test_labels = labels[test_indices]
 
     return train_data, test_data, train_labels, test_labels
 
