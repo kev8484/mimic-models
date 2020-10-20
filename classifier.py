@@ -91,6 +91,9 @@ def eval(data_iter, model, loss_function):
     for batch in data_iter:
         inputs, labels = batch
 
+        if torch.cuda.is_available():
+            inputs, labels = inputs.cuda(), labels.cuda()
+
         probs, classes = model(inputs)
         loss = loss_function(probs, labels)
 
