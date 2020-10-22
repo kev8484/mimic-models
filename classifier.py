@@ -1,8 +1,12 @@
 import argparse
 import logging
 
+import numpy as np
+
 import torch
 import torch.nn as nn
+
+from sklearn.metrics import roc_auc_score
 
 from model import TextCNN
 from utils import load_dataset, save_model_state
@@ -34,7 +38,7 @@ def train(args, states=None):
     loss_function = nn.CrossEntropyLoss()
     optimizer = torch.optim.Adam(model.parameters(), lr=config['lr'])
 
-    best_acc = 0
+    best_metric = 0
 
     # loop over the dataset multiple times
     for epoch in range(1, config['num_epochs'] + 1):
@@ -67,9 +71,14 @@ def train(args, states=None):
                 running_losses = []
 
             if i % args.test_interval == 0:
-                dev_acc = eval(val_loader, model, loss_function)
-                if dev_acc > best_acc:
-                    best_acc = dev_acc
+                dev_metric = eval(
+                    val_loader,
+                    model,
+                    loss_function,
+                    args.eval_metric,
+                )
+                if dev_metric > best_metric:
+                    best_metric = dev_metric
                     states = {
                         "epoch": epoch,
                         "step": i,
@@ -82,12 +91,15 @@ def train(args, states=None):
                         states=states
                     )
 
-    print(f"Finished Training, best accuracy: {best_acc}")
+    print(f"Finished Training, best {arg.eval_metric}: {best_metric}")
 
 
-def eval(data_iter, model, loss_function):
+def eval(data_iter, model, loss_function, metric):
     model.eval()
+
     corrects, avg_loss = 0, 0
+    all_labels, all_probs = [], []
+
     for batch in data_iter:
         inputs, labels = batch
 
@@ -96,15 +108,27 @@ def eval(data_iter, model, loss_function):
 
         probs, classes = model(inputs)
         loss = loss_function(probs, labels)
-
+        # accuracy
         avg_loss += loss.item()
         corrects += torch.sum(classes == labels.data)
+        # auc
+        all_labels.append(labels.numpy())
+        all_probs.append(probs[:, 1].numpy())
 
     size = len(data_iter.dataset)
     avg_loss /= size
     accuracy = 100.0 * corrects / size
+
+    y_true = np.concatenate(all_labels)
+    y_score = np.concatenate(all_probs)
+    auc = roc_auc_score(y_true, y_score)
+
     logging.info(
-        f"\nEvaluation - loss: {avg_loss:.6f}  acc: {accuracy:.4f}%({corrects}/{size}) \n")
+        f"\nEvaluation - loss: {avg_loss:.6f}  acc: {accuracy:.4f}%({corrects}/{size})  auc: {auc}\n")
+
+    if metric == auc:
+        return auc
+
     return accuracy
 
 
@@ -125,6 +149,8 @@ def parse_args(args):
                               type=int, help="Number of batches to print summary")
     parser_train.add_argument("--test-interval", default=50,
                               type=int, help="Number of batches to run validation test")
+    parser_train.add_argument("--eval-metric", default="accuracy",
+                              type='str', help="Metric used for determing the best model")
 
     # For predict mode
     parser_predict = subparsers.add_parser(
