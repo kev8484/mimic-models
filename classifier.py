@@ -150,7 +150,7 @@ def parse_args(args):
     parser_train.add_argument("--test-interval", default=50,
                               type=int, help="Number of batches to run validation test")
     parser_train.add_argument("--eval-metric", default="accuracy",
-                              type='str', help="Metric used for determing the best model")
+                              type=str, help="Metric used for determing the best model")
 
     # For predict mode
     parser_predict = subparsers.add_parser(
