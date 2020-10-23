@@ -112,8 +112,8 @@ def eval(data_iter, model, loss_function, metric):
             avg_loss += loss.item()
             corrects += torch.sum(classes == labels.data)
             # auc
-            all_labels.append(labels.numpy())
-            all_probs.append(probs[:, 1].numpy())
+            all_labels.append(labels.cpu().numpy())
+            all_probs.append(probs[:, 1].cpu().numpy())
 
         size = len(data_iter.dataset)
         avg_loss /= size
