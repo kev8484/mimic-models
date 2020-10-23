@@ -91,7 +91,7 @@ def train(args, states=None):
                         states=states
                     )
 
-    print(f"Finished Training, best {arg.eval_metric}: {best_metric}")
+    print(f"Finished Training, best {args.eval_metric}: {best_metric}")
 
 
 def eval(data_iter, model, loss_function, metric):
@@ -99,29 +99,29 @@ def eval(data_iter, model, loss_function, metric):
 
     corrects, avg_loss = 0, 0
     all_labels, all_probs = [], []
+    with torch.no_grad():
+        for batch in data_iter:
+            inputs, labels = batch
 
-    for batch in data_iter:
-        inputs, labels = batch
+            if torch.cuda.is_available():
+                inputs, labels = inputs.cuda(), labels.cuda()
 
-        if torch.cuda.is_available():
-            inputs, labels = inputs.cuda(), labels.cuda()
+            probs, classes = model(inputs)
+            loss = loss_function(probs, labels)
+            # accuracy
+            avg_loss += loss.item()
+            corrects += torch.sum(classes == labels.data)
+            # auc
+            all_labels.append(labels.numpy())
+            all_probs.append(probs[:, 1].numpy())
 
-        probs, classes = model(inputs)
-        loss = loss_function(probs, labels)
-        # accuracy
-        avg_loss += loss.item()
-        corrects += torch.sum(classes == labels.data)
-        # auc
-        all_labels.append(labels.numpy())
-        all_probs.append(probs[:, 1].numpy())
+        size = len(data_iter.dataset)
+        avg_loss /= size
+        accuracy = 100.0 * corrects / size
 
-    size = len(data_iter.dataset)
-    avg_loss /= size
-    accuracy = 100.0 * corrects / size
-
-    y_true = np.concatenate(all_labels)
-    y_score = np.concatenate(all_probs)
-    auc = roc_auc_score(y_true, y_score)
+        y_true = np.concatenate(all_labels)
+        y_score = np.concatenate(all_probs)
+        auc = roc_auc_score(y_true, y_score)
 
     logging.info(
         f"\nEvaluation - loss: {avg_loss:.6f}  acc: {accuracy:.4f}%({corrects}/{size})  auc: {auc}\n")
