@@ -126,7 +126,7 @@ def eval(data_iter, model, loss_function, metric):
     logging.info(
         f"\nEvaluation - loss: {avg_loss:.6f}  acc: {accuracy:.4f}%({corrects}/{size})  auc: {auc}\n")
 
-    if metric == auc:
+    if metric == "auc":
         return auc
 
     return accuracy
