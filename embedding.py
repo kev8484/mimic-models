@@ -89,7 +89,7 @@ def embed(model, token_batches):
 
 def parse_args(args):
     parser = argparse.ArgumentParser()
-    parser.add_argument("--bert-dir", type=Path, required=True,
+    parser.add_argument("--bert-dir", type=Path,
                         help="The directory containing pre-trained BERT models")
     parser.add_argument("--text-data", type=Path,
                         help="File containing text data to embed")
@@ -125,7 +125,7 @@ def main(args):
     # load the tokenizer and model
     bert_tokenizer, model = load_bert(bert_dir, bert_config, bert_model)
     # fetch raw text csv from S3 or get from local path
-    if args.aws:
+    if args.aws and args.text_data is None:
         raw_data = fetch_raw_data(bucket)
     else:
         raw_data = args.text_data
