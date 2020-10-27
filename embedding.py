@@ -52,7 +52,7 @@ def fetch_raw_data(s3_bucket):
     return local_raw_data
 
 
-def tokenize(tokenizer, text_file, batch_size=128, seq_length=64):
+def tokenize(tokenizer, text_file, batch_size=128, seq_length=128):
     token_li = []
     text_data = pd.read_csv(text_file)['TEXT']
     for i in range(text_data.shape[0] // batch_size + 1):
