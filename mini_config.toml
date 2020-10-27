@@ -3,7 +3,7 @@ labels = "./data/mimic_30d_readmit_labels.pt"
 
 random_seed = 42
 correct_imbalance = true
-batch_size = 128
+batch_size = 64
 num_classes = 2
 num_epochs = 5
 embedding_size = 768
