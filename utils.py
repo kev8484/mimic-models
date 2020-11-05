@@ -118,3 +118,13 @@ def save_model_state(save_dir, step, states):
     filename = f"best_steps_{step}.pt"
     full_path = Path(save_dir) / Path(filename)
     torch.save(states, str(full_path))
+
+
+def load_model_state(load_dir):
+    files = sorted(
+        Path(load_dir).glob("best_steps_*.pt"),
+        key=lambda f: f.stat().st_mtime
+    )
+    latest = files[-1]
+    logging.info(f"Loading the model state from: {latest}")
+    return torch.load(latest)
