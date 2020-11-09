@@ -4,39 +4,18 @@ from pathlib import Path
 import boto3
 import pandas as pd
 import torch
-from transformers import BertModel, BertConfig, BertTokenizer
+from transformers import AutoTokenizer, AutoModel
 
 
 S3_BUCKET = "mimic-deeplearning-text-cnn"
-S3_BERT_CONFIG = "bert/bert_config.json"
-S3_BERT_MODEL = "bert/pytorch_model.bin"
-S3_BERT_VOCAB = "bert/vocab.txt"
 S3_RAW_TEXT = "data/mimic_discharge_summaries_2500chars.csv"
 
 
-def fetch_bert(s3_bucket):
-    # create local directory to store fetched objects
-    local_bert_dir = Path.cwd() / Path("bert")
-    local_bert_dir.mkdir(exist_ok=True)
-    # define target file names (s3 API requires string formatted paths)
-    local_config = str(local_bert_dir) + '/bert_config.json'
-    local_model = str(local_bert_dir) + '/pytorch_model.bin'
-    local_vocab = str(local_bert_dir) + '/vocab.txt'
-    # download objects
-    s3_bucket.download_file(S3_BERT_CONFIG, local_config)
-    s3_bucket.download_file(S3_BERT_MODEL, local_model)
-    s3_bucket.download_file(S3_BERT_VOCAB, local_vocab)
-
-    # Note: tokenizer requires directory containing vocab file, not
-    # the vocab file itself
-    return str(local_bert_dir), local_config, local_model
-
-
-def load_bert(bert_dir, bert_config, bert_model):
-    tokenizer = BertTokenizer.from_pretrained(bert_dir)
-    config = BertConfig.from_pretrained(bert_config)
-    model = BertModel.from_pretrained(bert_model, config=config)
-
+def load_bert():
+    tokenizer = AutoTokenizer.from_pretrained(
+        "microsoft/BiomedNLP-PubMedBERT-base-uncased-abstract-fulltext")
+    model = AutoModel.from_pretrained(
+        "microsoft/BiomedNLP-PubMedBERT-base-uncased-abstract-fulltext")
     return tokenizer, model
 
 
@@ -89,8 +68,6 @@ def embed(model, token_batches):
 
 def parse_args(args):
     parser = argparse.ArgumentParser()
-    parser.add_argument("--bert-dir", type=Path,
-                        help="The directory containing pre-trained BERT models")
     parser.add_argument("--text-data", type=Path,
                         help="File containing text data to embed")
     parser.add_argument("--output-dir", type=Path, default=Path.cwd(),
@@ -108,24 +85,15 @@ def parse_args(args):
 def main(args):
     args = parse_args(args)
 
-    # load BERT
     print("Loading pre-trained BERT...")
-    if args.aws:
+
+    # load the BERT tokenizer and model
+    bert_tokenizer, model = load_bert()
+    # fetch raw text csv from S3 or get from local path
+    if args.text_data is None:
         # fetch objects from s3 bucket
         s3 = boto3.resource('s3')
         bucket = s3.Bucket(S3_BUCKET)
-        # returns local paths to downloaded objects
-        bert_dir, bert_config, bert_model = fetch_bert(bucket)
-    else:
-        # retrieve from local directory
-        bert_dir = str(args.bert_dir)
-        bert_config = list(args.bert_dir.glob("*config.json"))[0]
-        bert_model = list(args.bert_dir.glob("*model.bin"))[0]
-
-    # load the tokenizer and model
-    bert_tokenizer, model = load_bert(bert_dir, bert_config, bert_model)
-    # fetch raw text csv from S3 or get from local path
-    if args.aws and args.text_data is None:
         raw_data = fetch_raw_data(bucket)
     else:
         raw_data = args.text_data
@@ -149,7 +117,7 @@ def main(args):
     if args.aws:
         print("Uploading to S3 bucket...")
         s3.upload_file(
-            outfile, S3_BUCKET, f"data/mimic_discharge_summaries_bert_{args.seq_length}tkns.pt")
+            outfile, S3_BUCKET, f"data/mimic_discharge_summaries_pubmed_bert_{args.seq_length}tkns.pt")
     print("Completed.")
 
 
