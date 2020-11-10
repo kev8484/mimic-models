@@ -52,13 +52,34 @@ def tokenize(tokenizer, text_file, batch_size=128, seq_length=128):
     return token_li
 
 
+def move_to_GPU(input_ids, token_type_ids, attention_mask):
+
+    input_ids = input_ids.cuda()
+    token_type_ids = token_type_ids.cuda()
+    attention_mask = attention_mask.cuda()
+
+    output = {
+        'input_ids': input_ids,
+        'token_type_ids': token_type_ids,
+        'attention_mask': attention_mask,
+    }
+
+    return output
+
+
 def embed(model, token_batches):
     model.eval()
+
+    if torch.cuda.is_available():
+        model.cuda()
+
     hidden_states = []
     with torch.no_grad():
         for i, batch in enumerate(token_batches):
-            if i % 100 == 0:
+            if i % 50 == 0:
                 print(f"Embedding batch {i + 1}...")
+            if torch.cuda.is_available():
+                batch = move_to_GPU(**batch)
             last_hidden_state, _ = model(**batch)
             hidden_states.append(last_hidden_state)
 
