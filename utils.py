@@ -1,6 +1,17 @@
+import random
 from pathlib import Path
+
 import numpy as np
 import torch
+
+
+def set_seed(seed_value=42):
+    """Set seed for reproducibility."""
+
+    random.seed(seed_value)
+    np.random.seed(seed_value)
+    torch.manual_seed(seed_value)
+    torch.cuda.manual_seed_all(seed_value)
 
 
 def load_dataset(data_path, labels_path, batch_size, random_seed=None, balance=False):
