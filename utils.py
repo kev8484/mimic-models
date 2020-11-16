@@ -9,7 +9,7 @@ from torch.utils.data import (TensorDataset, random_split, DataLoader,
 
 
 def set_seed(seed_value=42):
-    """Set seed for reproducibility
+    """ Set seed for reproducibility.
     """
 
     random.seed(seed_value)
@@ -19,6 +19,8 @@ def set_seed(seed_value=42):
 
 
 def load_tokens(input_id_path, token_type_id_path, attention_mask_path, label_path):
+    """ Load BERT tokens (comprised of 3 diff tensors)
+    """
     input_ids = torch.load(input_id_path)
     token_type_ids = torch.load(token_type_id_path)
     attention_mask = torch.load(attention_mask_path)
@@ -28,7 +30,8 @@ def load_tokens(input_id_path, token_type_id_path, attention_mask_path, label_pa
 
 
 def load_embeddings(data_path, label_path):
-
+    """ Load word embedding vector
+    """
     data = torch.load(data_path)
     labels = torch.load(label_path)
 
@@ -36,6 +39,8 @@ def load_embeddings(data_path, label_path):
 
 
 def train_val_test_split(dataset, train_size=0.8, random_seed=42):
+    """ Split dataset into training, validation, and test sets
+    """
 
     full_len = len(dataset)
     train_len = int(np.floor(train_size * full_len))
@@ -51,12 +56,24 @@ def train_val_test_split(dataset, train_size=0.8, random_seed=42):
     return train_dataset, val_dataset, test_dataset
 
 
-def create_dataloaders(dataset, labels, batch_size=32, random_seed=42, num_workers=2, balance=False):
+def create_dataloaders(
+    dataset,
+    labels,
+    batch_size=32,
+    train_size=0.8,
+    random_seed=42,
+    num_workers=2,
+    balance=False,
+):
     """ Return data loaders for train/val/test sets
     """
 
-    train_dataset, val_dataset, test_dataset = train_val_test_split(dataset)
-
+    train_dataset, val_dataset, test_dataset = train_val_test_split(
+        dataset,
+        train_size=train_size,
+        random_seed=random_seed,
+    )
+    # get randomized batches for training, optionally weight to balance the classes
     train_loader = DataLoader(
         dataset=train_dataset,
         batch_size=batch_size,
