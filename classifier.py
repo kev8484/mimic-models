@@ -9,7 +9,7 @@ import torch.nn as nn
 from sklearn.metrics import roc_auc_score
 
 from model import TextCNN
-from utils import load_embeddings, create_dataloaders, save_model_state
+from utils import load_embeddings, create_dataloaders, save_model_state, set_seed
 from toml_config import Config
 
 
@@ -17,6 +17,10 @@ def train(args, states=None):
 
     config_obj = Config(args.config_file)
     config = config_obj.elements
+
+    # make training runs deterministic
+    set_seed(seed_value=config['random_seed'])
+
     logging.info("Loading datasets...")
     dataset, labels = load_embeddings(
         data_path=config['data'], label_path=config['labels'])

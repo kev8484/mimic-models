@@ -10,7 +10,7 @@ import torch.nn.functional as F
 from sklearn.metrics import roc_auc_score
 from transformers import BertForSequenceClassification
 
-from utils import load_tokens, create_dataloaders, save_model_state
+from utils import load_tokens, create_dataloaders, save_model_state, set_seed
 from toml_config import Config
 
 
@@ -18,6 +18,10 @@ def train(args, states=None):
 
     config_obj = Config(args.config_file)
     config = config_obj.elements
+
+    # make training runs deterministic
+    set_seed(seed_value=config['random_seed'])
+
     logging.info("Loading datasets...")
     dataset, labels = load_tokens(
         input_id_path=config['input_id'],
