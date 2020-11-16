@@ -56,16 +56,24 @@ def train(args, states=None):
         running_losses = []
         for i, data in enumerate(train_loader, 0):
             # get the inputs; data is a list of [inputs, labels]
-            inputs, labels = data
+            input_ids, token_type_ids, attention_mask, labels = data
 
             if torch.cuda.is_available():
-                inputs, labels = inputs.cuda(), labels.cuda()
+                input_ids = input_ids.cuda()
+                token_type_ids = token_type_ids.cuda()
+                attention_mask = attention_mask.cuda()
+                labels = labels.cuda()
 
             # zero the parameter gradients
             optimizer.zero_grad()
 
             # forward
-            _, logits = model(inputs)
+            _, logits = model(
+                input_ids=input_ids,
+                token_type_ids=token_type_ids,
+                attention_mask=attention_mask,
+                labels=labels,
+            )
             probs = F.softmax(logits, dim=1)
 
             # backprop
@@ -112,12 +120,20 @@ def eval(data_iter, model, loss_function, metric):
     all_labels, all_probs = [], []
     with torch.no_grad():
         for batch in data_iter:
-            inputs, labels = batch
+            input_ids, token_type_ids, attention_mask, labels = batch
 
             if torch.cuda.is_available():
-                inputs, labels = inputs.cuda(), labels.cuda()
+                input_ids = input_ids.cuda()
+                token_type_ids = token_type_ids.cuda()
+                attention_mask = attention_mask.cuda()
+                labels = labels.cuda()
 
-            _, logits = model(inputs)
+            _, logits = model(
+                input_ids=input_ids,
+                token_type_ids=token_type_ids,
+                attention_mask=attention_mask,
+                labels=labels,
+            )
             probs = F.softmax(logits, dim=1)
             classes = torch.max(probs, 1)[1]  # (batch_size)
 
