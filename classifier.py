@@ -9,7 +9,7 @@ import torch.nn as nn
 from sklearn.metrics import roc_auc_score
 
 from model import TextCNN
-from utils import load_dataset, save_model_state
+from utils import load_embeddings, create_dataloaders, save_model_state
 from toml_config import Config
 
 
@@ -18,9 +18,12 @@ def train(args, states=None):
     config_obj = Config(args.config_file)
     config = config_obj.elements
     logging.info("Loading datasets...")
-    train_loader, val_loader, test_loader = load_dataset(
-        data_path=config['data'],
-        labels_path=config['labels'],
+    dataset, labels = load_embeddings(
+        data_path=config['data'], label_path=config['labels'])
+
+    train_loader, val_loader, test_loader = create_dataloaders(
+        dataset,
+        labels,
         batch_size=config['batch_size'],
         random_seed=config['random_seed'],
         balance=config['correct_imbalance'],
@@ -52,7 +55,7 @@ def train(args, states=None):
             if torch.cuda.is_available():
                 inputs, labels = inputs.cuda(), labels.cuda()
 
-            # zero the parameter gradients
+            # zero the parameter gradients before each pass
             optimizer.zero_grad()
 
             # forward
