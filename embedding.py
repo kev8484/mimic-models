@@ -90,11 +90,11 @@ def embed(model, token_batches):
 def parse_args(args):
     parser = argparse.ArgumentParser()
     parser.add_argument("--text-data", type=Path,
-                        help="File containing text data to embed")
+                        help="File containing text data to tokenize/embed")
     parser.add_argument("--output-dir", type=Path, default=Path.cwd(),
-                        help="The directory to save the word embedding tensors")
+                        help="The directory to save the output tensors")
     parser.add_argument("-b", "--batch-size", type=int, default=128,
-                        help="Batch size to feed into tokenizer and word embedder")
+                        help="Batch size")
     parser.add_argument("--seq-length", type=int, default=128,
                         help="Number of tokens in output sequence (will pad or truncate as needed)")
     parser.add_argument("--aws", action="store_true",
@@ -137,6 +137,7 @@ def main(args):
 
     if args.aws:
         print("Uploading to S3 bucket...")
+        s3 = boto3.resource('s3')
         s3.upload_file(
             outfile, S3_BUCKET, f"data/mimic_discharge_summaries_pubmed_bert_{args.seq_length}tkns.pt")
     print("Completed.")
