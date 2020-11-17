@@ -50,7 +50,7 @@ def train_val_test_split(dataset, train_size=0.8, random_seed=42):
     shuffled_indices = np.random.permutation(full_len)
     train_indices = shuffled_indices[:train_len]
     val_indices = shuffled_indices[train_len:(val_len + train_len)]
-    test_indices = shuffle_indices[(val_len + train_len):]
+    test_indices = shuffled_indices[(val_len + train_len):]
 
     train_dataset = Subset(dataset, train_indices)
     val_dataset = Subset(dataset, val_indices)
