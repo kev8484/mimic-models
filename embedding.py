@@ -119,7 +119,8 @@ def main(args):
     bert_tokenizer, model = load_bert()
     # fetch raw text csv from S3 or get from local path
     if args.text_data is None:
-        raise RuntimeError("Must use --text-data to include a csv file with discharge notes")
+        raise RuntimeError(
+            "Must use --text-data to include a csv file with discharge notes")
     else:
         raw_data = args.text_data
     # tokenize text
@@ -158,7 +159,7 @@ def main(args):
 
     if args.aws:
         print("Uploading to S3 bucket...")
-        s3 = boto3.resource('s3')
+        s3 = boto3.client('s3')
 
         for local_path in output_files:
             # get just the file name from the path
