@@ -4,7 +4,7 @@ from pathlib import Path
 
 import numpy as np
 import torch
-from torch.utils.data import (TensorDataset, random_split, DataLoader,
+from torch.utils.data import (TensorDataset, Subset, DataLoader,
                               WeightedRandomSampler, RandomSampler, SequentialSampler)
 
 
@@ -47,11 +47,17 @@ def train_val_test_split(dataset, train_size=0.8, random_seed=42):
     val_len = (full_len - train_len) // 2
     test_len = full_len - train_len - val_len
 
-    train_dataset, val_dataset, test_dataset = random_split(
-        dataset=dataset,
-        lengths=[train_len, val_len, test_len],
-        generator=torch.Generator().manual_seed(random_seed),
-    )
+    shuffled_indices = np.random.permutation(full_len)
+    train_indices = shuffled_indices[:train_len]
+    val_indices = shuffled_indices[train_len:(val_len + train_len)]
+    test_indices = shuffle_indices[(val_len + train_len):]
+
+    train_dataset = Subset(dataset, train_indices)
+    val_dataset = Subset(dataset, val_indices)
+    test_dataset = Subset(dataset, test_indices)
+
+    assert len(train_dataset) == train_len and len(
+        val_dataset) == val_len and len(test_dataset) == test_len
 
     return train_dataset, val_dataset, test_dataset
 
