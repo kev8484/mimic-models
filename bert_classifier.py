@@ -29,7 +29,6 @@ def train(args, states=None):
         attention_mask_path=config['attention_mask'],
         label_path=config['labels'],
     )
-    print(len(dataset))
 
     train_loader, val_loader, test_loader = create_dataloaders(
         dataset,
