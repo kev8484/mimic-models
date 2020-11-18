@@ -50,7 +50,8 @@ def train(args, states=None):
         model.cuda()
 
     loss_function = nn.CrossEntropyLoss()
-    optimizer = AdamW(model.parameters(), lr=config['lr'])
+    # optimizer = AdamW(model.parameters(), lr=config['lr'])
+    optimizer = torch.optim.SGD(model.paramaters(), lr=config['lr'])
 
     total_train_steps = config['num_epochs'] * len(train_loader)
     scheduler = get_linear_schedule_with_warmup(
@@ -86,10 +87,10 @@ def train(args, states=None):
                 attention_mask=attention_mask,
                 labels=labels,
             )
-            probs = F.softmax(logits, dim=1)
+            # probs = F.softmax(logits, dim=1)
 
             # backprop
-            loss = loss_function(probs, labels)
+            loss = loss_function(logits, labels)
             loss.backward()
 
             # clip gradients
@@ -154,7 +155,7 @@ def eval(data_iter, model, loss_function, metric):
             probs = F.softmax(logits, dim=1)
             classes = torch.max(probs, 1)[1]  # (batch_size)
 
-            loss = loss_function(probs, labels)
+            loss = loss_function(logits, labels)
             # accuracy
             avg_loss += loss.item()
             corrects += torch.sum(classes == labels.data)
