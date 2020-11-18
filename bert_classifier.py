@@ -165,14 +165,17 @@ def eval(data_iter, model, loss_function, metric):
 
         size = len(data_iter.dataset)
         avg_loss /= size
-        accuracy = 100.0 * corrects / size
+        # accuracy = 100.0 * corrects / size
 
         y_true = np.concatenate(all_labels)
         y_score = np.concatenate(all_probs)
+
+        num_correct = (y_score > 0.5).astype(int)
+        accuracy = 100.0 * num_correct / size
         auc = roc_auc_score(y_true, y_score)
 
     logging.info(
-        f"\nEvaluation - loss: {avg_loss:.6f}  acc: {accuracy:.4f}%({corrects}/{size})  auc: {auc}\n")
+        f"\nEvaluation - loss: {avg_loss:.6f}  acc: {accuracy:.4f}%({num_correct}/{size})  auc: {auc}\n")
 
     if metric == "auc":
         return auc
