@@ -51,7 +51,7 @@ def train(args, states=None):
 
     loss_function = nn.CrossEntropyLoss()
     # optimizer = AdamW(model.parameters(), lr=config['lr'])
-    optimizer = torch.optim.SGD(model.paramaters(), lr=config['lr'])
+    optimizer = torch.optim.SGD(model.parameters(), lr=config['lr'])
 
     total_train_steps = config['num_epochs'] * len(train_loader)
     scheduler = get_linear_schedule_with_warmup(
