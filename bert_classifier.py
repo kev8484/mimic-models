@@ -8,7 +8,7 @@ import torch.nn as nn
 import torch.nn.functional as F
 
 from sklearn.metrics import roc_auc_score
-from transformers import BertForSequenceClassification
+from transformers import BertForSequenceClassification, get_linear_schedule_with_warmup, AdamW
 
 from utils import load_tokens, create_dataloaders, save_model_state, set_seed
 from toml_config import Config
@@ -29,6 +29,7 @@ def train(args, states=None):
         attention_mask_path=config['attention_mask'],
         label_path=config['labels'],
     )
+    print(len(dataset))
 
     train_loader, val_loader, test_loader = create_dataloaders(
         dataset,
@@ -49,7 +50,14 @@ def train(args, states=None):
         model.cuda()
 
     loss_function = nn.CrossEntropyLoss()
-    optimizer = torch.optim.Adam(model.parameters(), lr=config['lr'])
+    optimizer = AdamW(model.parameters(), lr=config['lr'])
+
+    total_train_steps = config['num_epochs'] * len(train_loader)
+    scheduler = get_linear_schedule_with_warmup(
+        optimizer,
+        num_warmup_steps=0,
+        num_training_steps=total_train_steps,
+    )
 
     best_metric = 0
 
@@ -83,8 +91,13 @@ def train(args, states=None):
             # backprop
             loss = loss_function(probs, labels)
             loss.backward()
+
+            # clip gradients
+            torch.nn.utils.clip_grad_norm_(model.parameters(), 1.0)
             # update/optimize
             optimizer.step()
+            # update learning rate
+            scheduler.step()
 
             # Log summary
             running_losses.append(loss.item())
