@@ -38,7 +38,7 @@ def load_embeddings(data_path, label_path):
     return TensorDataset(data, labels), labels
 
 
-def train_val_test_split(dataset, train_size=0.8, random_seed=42):
+def train_val_test_split(dataset, train_size=0.8, random_seed=42, return_index=False):
     """ Split dataset into training, validation, and test sets
     """
 
@@ -51,6 +51,9 @@ def train_val_test_split(dataset, train_size=0.8, random_seed=42):
     train_indices = shuffled_indices[:train_len]
     val_indices = shuffled_indices[train_len:(val_len + train_len)]
     test_indices = shuffled_indices[(val_len + train_len):]
+
+    if return_index:
+        return train_indices, val_indices, test_indices
 
     train_dataset = Subset(dataset, train_indices)
     val_dataset = Subset(dataset, val_indices)
@@ -79,12 +82,19 @@ def create_dataloaders(
         train_size=train_size,
         random_seed=random_seed,
     )
+
+    train_indices, _, _ = train_val_test_split(
+        dataset,
+        train_size=train_size,
+        random_seed=random_seed,
+        return_index=True
+    )
     # get randomized batches for training, optionally weight to balance the classes
     train_loader = DataLoader(
         dataset=train_dataset,
         batch_size=batch_size,
         sampler=balanced_sampler(
-            labels, random_seed=random_seed) if balance else RandomSampler(train_dataset),
+            labels[train_indices], random_seed=random_seed) if balance else RandomSampler(train_dataset),
         num_workers=num_workers,
     )
     # no need to for random sampling or class balancing when evaluating the validation set
