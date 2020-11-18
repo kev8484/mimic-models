@@ -169,7 +169,7 @@ def eval(data_iter, model, loss_function, metric):
         y_true = np.concatenate(all_labels)
         y_score = np.concatenate(all_probs)
 
-        num_correct = (y_score > 0.5).astype(int)
+        num_correct = np.sum((y_score > 0.5).astype(int))
         accuracy = 100.0 * num_correct / size
         auc = roc_auc_score(y_true, y_score)
 
